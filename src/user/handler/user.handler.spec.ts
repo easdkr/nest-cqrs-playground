@@ -6,6 +6,7 @@ import { CreateUserCommand } from '../command';
 import { randomUUID } from 'crypto';
 import { User } from '../entity';
 import { ConflictException } from '@nestjs/common';
+import { CqrsModule, EventPublisher } from '@nestjs/cqrs';
 
 describe(UserHandler, () => {
   let userHandler: UserHandler;
@@ -13,12 +14,14 @@ describe(UserHandler, () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      imports: [CqrsModule],
       providers: [
         {
           provide: UserRepository,
           useValue: mockRepository,
         },
         UserHandler,
+        EventPublisher,
       ],
     }).compile();
 
@@ -60,6 +63,23 @@ describe(UserHandler, () => {
       expect(user.id).toEqual(expect.any(String));
       expect(user.email).toBe('test@test.com');
       expect(user.password).toBe('password');
+    });
+
+    it('유저 생성 후 이벤트 발행', async () => {
+      // given
+      const command = new CreateUserCommand('test@test.com', 'password');
+      mockRepository.findOne.mockResolvedValueOnce(null);
+      const mockUser = new User(randomUUID(), command.email, command.password);
+      mockRepository.create.mockResolvedValueOnce(mockUser);
+
+      // 이벤트 발행 함수 스파이
+      const createdSpy = jest.spyOn(mockUser, 'created');
+
+      // when
+      await userHandler.execute(command);
+
+      // then
+      expect(createdSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
