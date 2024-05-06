@@ -4,7 +4,8 @@ import { UserRepository } from './repository';
 import { UserHandler } from './handler/user.handler';
 import { UserController } from './controller/user.controller';
 import { CqrsModule } from '@nestjs/cqrs';
-import { UserCreatedEventHandler } from './handler';
+import { CouponRegisterEventHandler, UserCreatedEventHandler } from './handler';
+import { UserSaga } from './saga';
 
 @Module({
   imports: [CqrsModule],
@@ -13,7 +14,9 @@ import { UserCreatedEventHandler } from './handler';
     UserRepository,
     UserHandler,
     UserCreatedEventHandler,
+    CouponRegisterEventHandler,
     UserService,
+    UserSaga,
   ],
   controllers: [UserController],
 })
